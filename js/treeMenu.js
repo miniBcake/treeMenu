@@ -120,11 +120,6 @@
  *
  * @property {string} [loading='bi-hourglass-split']
  *   Lazy Load 진행 중 표시할 로딩 아이콘 클래스.
- *
- * @property {string} [checkBoxClass='custom-control-input']
- *   체크박스 `<input>`에 적용할 CSS 클래스.
- *   Bootstrap 4 `custom-control-input` 방식을 기본으로 사용합니다.
- *   내장 CSS의 indeterminate(−) 스타일과 연동됩니다.
  */
 
 /**
@@ -366,7 +361,6 @@ const TreeMenu = (selector, options = {}) => {
         expand:        'bi-chevron-right',
         collapse:      'bi-chevron-down',
         loading:       'bi-hourglass-split',
-        checkBoxClass: 'custom-control-input',
     };
 
     /**
@@ -471,56 +465,28 @@ const TreeMenu = (selector, options = {}) => {
 .tree-menu-spin { display: inline-block; animation: tree-menu-spin 1s linear infinite; }
 
 /* ══════════════════════════════════════════════════════════════
-   Bootstrap 4 custom-control 체크박스
-   Bootstrap 5 프로젝트에서 custom-control 클래스를 사용할 때 필요합니다.
-   .tree-menu-root 스코프로 충돌을 방지합니다.
+   체크박스
    ══════════════════════════════════════════════════════════════ */
-.tree-menu-root .custom-control {
-    position: relative; display: block; min-height: 1.5rem; padding-left: 1.5rem;
+.tree-menu-root .form-check {
+    min-height: 1.5rem;
+    padding-left: 1.75em; /* 체크박스와 아이콘 사이 간격 확보 */
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
 }
-.tree-menu-root .custom-control-input {
-    position: absolute; left: 0; z-index: -1; width: 1rem; height: 1.25rem; opacity: 0;
+
+.tree-menu-root .form-check-input {
+    margin-top: 0; /* 중앙 정렬 유지 */
+    margin-left: -1.75em;
+    cursor: pointer;
 }
-.tree-menu-root .custom-control-label {
-    position: relative; margin-bottom: 0; vertical-align: top; cursor: pointer;
+
+/* Indeterminate (중간 상태 - 아이콘 설정) */
+.tree-menu-root .form-check-input:indeterminate {
+    background-color: #0d6efd; /* 기본 primary 색상 */
+    border-color: #0d6efd;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cline x1='5' y1='10' x2='15' y2='10' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3e%3c/svg%3e");
 }
-.tree-menu-root .custom-control-label::before {
-    position: absolute; top: 0.125rem; left: -1.5rem;
-    display: block; width: 1rem; height: 1rem;
-    pointer-events: none; content: "";
-    background-color: #fff; border: 1px solid #b7b9cc; border-radius: 0.25rem;
-    transition: background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-}
-.tree-menu-root .custom-control-label::after {
-    position: absolute; top: 0.125rem; left: -1.5rem;
-    display: block; width: 1rem; height: 1rem;
-    content: ""; background: 50% / 50% 50% no-repeat;
-}
-/* 포커스 */
-.tree-menu-root .custom-control-input:focus ~ .custom-control-label::before {
-    box-shadow: 0 0 0 0.2rem rgba(78,115,223,0.25);
-}
-.tree-menu-root .custom-control-input:focus:not(:checked) ~ .custom-control-label::before {
-    border-color: #a0b4f4;
-}
-/* 체크됨 */
-.tree-menu-root .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
-    background-color: #4e73df; border-color: #4e73df;
-}
-.tree-menu-root .custom-checkbox .custom-control-input:checked ~ .custom-control-label::after {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z'/%3e%3c/svg%3e");
-}
-/* indeterminate(−) */
-.tree-menu-root .custom-checkbox .custom-control-input:indeterminate ~ .custom-control-label::before {
-    background-color: #4e73df; border-color: #4e73df;
-}
-.tree-menu-root .custom-checkbox .custom-control-input:indeterminate ~ .custom-control-label::after {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cline x1='5' y1='8' x2='11' y2='8' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3e%3c/svg%3e");
-    background-position: center; background-size: 100% 100%; background-repeat: no-repeat; transform: none;
-}
-/* 비활성화 */
-.tree-menu-root .custom-control-input:disabled ~ .custom-control-label { color: #858796; }
-.tree-menu-root .custom-control-input:disabled ~ .custom-control-label::before { background-color: #eaecf4; }
 /* ══════════════════════════════════════════════════════════════ */
         `;
         document.head.appendChild(style);
@@ -783,11 +749,11 @@ const TreeMenu = (selector, options = {}) => {
         let toggleHtml;
         if (node.isLoading) {
             toggleHtml = `<i class="bi ${opt.icons.loading} tree-menu-spin" style="font-size:0.8rem;"></i>`;
-        } else if (hasChildren) {
+        } else if (node.type === 'folder' || hasChildren) {
             const chevron = node.isExpanded ? opt.icons.collapse : opt.icons.expand;
             toggleHtml = `<i class="bi ${chevron} tree-menu-cursor" style="font-size:0.8rem;"></i>`;
         } else {
-            // 리프 노드: bi-dot, 색상 #dee2e6 (기존 jte 템플릿과 동일)
+            // 파일(말단 노드)인 경우에만 bi-dot 표시
             toggleHtml = `<i class="bi bi-dot" style="font-size:0.9rem;color:#dee2e6;"></i>`;
         }
 
@@ -809,16 +775,15 @@ const TreeMenu = (selector, options = {}) => {
             ? 'text-nowrap text-primary fw-bold'
             : (isFolder ? 'text-nowrap fw-bold text-dark' : 'text-nowrap text-dark');
 
-        // ── 체크박스 (Bootstrap 4 custom-control 방식) ────────────────────
-        // 내장 CSS의 .custom-checkbox .custom-control-input:indeterminate 규칙과 연동됩니다
+        // ── 체크박스 ────────────────────
         const safeId = node.id.replace(/[^a-zA-Z0-9_-]/g, '-');
         const checkboxHtml = opt.showCheckbox ? `
-            <div class="custom-control custom-checkbox me-3">
+            <div class="form-check mb-0">
+                <label class="form-check-label" for="chk-${safeId}"></label>
                 <input type="checkbox"
-                       class="${opt.icons.checkBoxClass} tree-checkbox"
+                       class="form-check-input tree-checkbox"
                        id="chk-${safeId}"
                        ${node.isChecked ? 'checked' : ''}>
-                <label class="custom-control-label" for="chk-${safeId}"></label>
             </div>` : '';
 
         // ── 자식 컨테이너 (기존 border-start + ms-4 ps-2 재현) ────────────
@@ -1182,12 +1147,12 @@ const TreeMenu = (selector, options = {}) => {
             const itemClass = `tree-menu-search-item border-bottom py-2 px-1${isFocused ? ' is-focused' : ''}`;
 
             const checkboxHtml = opt.showCheckbox ? `
-            <div class="custom-control custom-checkbox me-3">
+            <div class="form-check mb-0">
+                <label class="form-check-label" for="chk-${safeId}"></label>
                 <input type="checkbox"
-                       class="${opt.icons.checkBoxClass} tree-checkbox"
+                       class="form-check-input tree-checkbox"
                        id="chk-${safeId}"
                        ${node.isChecked ? 'checked' : ''}>
-                <label class="custom-control-label" for="chk-${safeId}"></label>
             </div>` : '';
 
             html += `
@@ -1253,7 +1218,7 @@ const TreeMenu = (selector, options = {}) => {
      * @returns {Object[]} 통합된 데이터 배열
      */
     const getSelectedAll = () => {
-         return getSelectedFolders().concat(getSelectedFiles());
+        return getSelectedFolders().concat(getSelectedFiles());
     }
 
     // =========================================================================

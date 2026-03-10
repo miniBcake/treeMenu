@@ -374,9 +374,9 @@ const TreeMenu = (selector, options = {}) => {
      * @type {ColumnMapping}
      */
     const defaultColumns = {
-        id:         (item) => item.safeId || item.id || item.seq_no || item.code,
+        id:         'id',
         name:       'name',
-        type:       (item) => (item.isDir || item.code || (item.children && item.children.length > 0)) ? 'folder' : 'file',
+        type:       (item) => (item.children && item.children.length > 0) ? 'folder' : 'file',
         children:   'children',
         extraItems: 'memberList',
         subText:    'position_name',
@@ -1248,6 +1248,14 @@ const TreeMenu = (selector, options = {}) => {
             .map(n => n.raw);
     };
 
+    /**
+     * 선택된 파일 목록 데이터 배열 반환 (폴더 + 파일)
+     * @returns {Object[]} 통합된 데이터 배열
+     */
+    const getSelectedAll = () => {
+         return getSelectedFolders().concat(getSelectedFiles());
+    }
+
     // =========================================================================
     // 공개 제어 API
     // =========================================================================
@@ -1297,12 +1305,15 @@ const TreeMenu = (selector, options = {}) => {
 
     /** @type {TreeMenuInstance} */
     return {
-        search,
-        setData,
-        destroy,
-        getSelectedFolders,
-        getSelectedFiles,
-        setCheck,
-        toggleNode,
+        search,  // 검색
+        setData, // 새 데이터 세팅
+        destroy, // 완전 초기화
+
+        getSelectedFolders, // 선택된 폴더 리스트
+        getSelectedFiles,   // 선택된 파일 리스트
+        getSelectedAll,     // 선택된 전체 리스트
+
+        setCheck,   // 체크 상태 전파
+        toggleNode, // 토글 관리
     };
 };

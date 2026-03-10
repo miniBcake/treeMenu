@@ -2,102 +2,97 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>TreeMenu 예제</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TreeMenu Library Examples</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        .example-card {
+            transition: transform 0.2s, shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .example-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+    </style>
 </head>
-<body>
-<main>
-    <section class="input-group input-group-sm shadow-sm rounded-2">
-        <small class="input-group-text bg-white">
-            <i class="bi bi-search text-muted"></i>
-        </small>
+<body class="bg-light">
 
-        <label for="search-org" class="visually-hidden"></label>
-        <input type="text" id="search-org"
-               class="form-control border-light-subtle border-start-0"
-               placeholder="이름/직급/부서 검색">
+<div class="container py-5">
+    <header class="text-center mb-5">
+        <h1 class="fw-bold text-primary"><i class="bi bi-diagram-3-fill me-2"></i>TreeMenu.js</h1>
+        <p class="text-muted">강력하고 가벼운 조직도 및 파일 시스템 트리 라이브러리 예제</p>
+    </header>
 
-        <small id="btn-close" class="input-group-text bg-white" style="cursor: pointer;">
-            <i class="bi bi-x text-muted"></i>
-        </small>
-    </section>
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-5">
+            <a href="jsonTree.html" class="card h-100 border-0 shadow-sm example-card">
+                <div class="card-body p-4">
+                    <div class="icon-box bg-primary-soft text-primary mb-3" style="background-color: rgba(13, 110, 253, 0.1);">
+                        <i class="bi bi-filetype-json fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">JSON 데이터 트리</h5>
+                    <p class="text-muted small">
+                        `example.json` 파일을 한 번에 불러와 전체 조직도를 렌더링합니다.
+                        소규모 조직도나 고정된 데이터를 다룰 때 적합합니다.
+                    </p>
+                    <div class="d-flex align-items-center text-primary mt-3 small fw-bold">
+                        예제 보기 <i class="bi bi-arrow-right ms-1"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
 
-    <div class="bg-white rounded-3" style="height: 400px;">
-      <div class="h-100 overflow-auto custom-scrollbar p-2">
-        <nav class="nav flex-column org-tree-nav" id="send-org-tree-nav">
-          <div class="text-center py-5">
-            <div class="mb-3">
-              <i class="bi bi-people text-light" style="font-size: 3rem;"></i>
-            </div>
-            <p class="text-muted mb-0 small">조직도를 불러오는 중입니다.</p>
-          </div>
-        </nav>
-      </div>
+        <div class="col-md-5">
+            <a href="lazyLoading.html" class="card h-100 border-0 shadow-sm example-card">
+                <div class="card-body p-4">
+                    <div class="icon-box bg-warning-soft text-warning mb-3" style="background-color: rgba(255, 193, 7, 0.1);">
+                        <i class="bi bi-cloud-download fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">지연 로딩 (LazyLoad)</h5>
+                    <p class="text-muted small">
+                        폴더를 클릭할 때마다 서버에서 하위 데이터를 비동기로 가져옵니다.
+                        수만 명 이상의 대규모 조직도나 실시간 데이터 처리에 필수적입니다.
+                    </p>
+                    <div class="d-flex align-items-center text-warning mt-3 small fw-bold">
+                        예제 보기 <i class="bi bi-arrow-right ms-1"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 
-</main>
-
-
-<script src="js/treeMenu.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', async () => {
-
-        const response = await fetch('example.json');
-        if (!response.ok) throw new Error('데이터를 불러오는데 실패했습니다.');
-
-        const orgData = await response.json();
-
-        const tree = TreeMenu('#send-org-tree-nav', {
-            data:orgData,
-            columns: { // id, name, type, children, extraItems, subText로 사용할 컬럼 명을 지정
-                id: 'code',
-                name: 'name',
-                type: (item) => item.code ? 'folder' : 'file',
-                children: 'children',
-                extraItems: 'memberList',
-                subText: 'position_name'
-            },
-            icons: { // icon 지정
-                folderClose: 'bi-collection-fill text-primary',
-                folderOpen: 'bi-collection-fill text-primary',
-                file: 'bi-person-fill text-muted',
-                expand: 'bi-chevron-right',
-                collapse: 'bi-chevron-down',
-                loading: 'bi-hourglass-split',
-                checkBoxClass: 'custom-control-input me-2'
-            },
-            onCheckChange: (folders, files) => console.log(folders, files)
-        });
-
-
-        const searchInput = document.getElementById('search-org');
-
-        const handleSearch = debounce((event) => {
-            const keyword = event.target.value;
-            if (tree) {
-                tree.search(keyword);
-            }
-        }, 500);
-
-        searchInput.addEventListener('input', handleSearch);
-    });
-
-    /**
-     * 디바운스 함수: 연속된 호출 중 마지막 호출만 실행
-     * @param {Function} func - 실행할 함수
-     * @param {number} delay - 대기 시간 (ms)
-     */
-    function debounce(func, delay) {
-        let timer;
-        return function (...args) {
-            if (timer) clearTimeout(timer); // 이전 타이머가 있으면 제거
-            timer = setTimeout(() => {
-                func.apply(this, args);    // 지정된 시간 후 함수 실행
-            }, delay);
-        };
-    }
-</script>
+    <section class="mt-5 pt-5 border-top">
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <i class="bi bi-search fs-4 text-secondary mb-2 d-block"></i>
+                <h6 class="fw-bold">실시간 검색</h6>
+                <p class="text-muted x-small">검색 시 상위 경로까지 표시되는 지능형 리스트 모드</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-check2-all fs-4 text-secondary mb-2 d-block"></i>
+                <h6 class="fw-bold">계층형 체크박스</h6>
+                <p class="text-muted x-small">부모/자식 간 체크 상태가 자동 연동(Cascade) 되는 체크 시스템</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-lightning-charge fs-4 text-secondary mb-2 d-block"></i>
+                <h6 class="fw-bold">커스텀 아이콘</h6>
+                <p class="text-muted x-small">데이터 필드에 따라 유연하게 변경 가능한 Bootstrap 아이콘</p>
+            </div>
+        </div>
+    </section>
+</div>
 
 </body>
 </html>

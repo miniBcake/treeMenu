@@ -1,0 +1,6 @@
+[
+  { "code": "EXEC", "name": "경영진" },
+  { "code": "DEV", "name": "개발본부" },
+  { "code": "SALES", "name": "영업본부" },
+  { "code": "HR", "name": "인사지원부" }
+]

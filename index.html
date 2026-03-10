@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>TreeMenu 예제</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+<main>
+    <section class="input-group input-group-sm shadow-sm rounded-2">
+        <small class="input-group-text bg-white">
+            <i class="bi bi-search text-muted"></i>
+        </small>
+
+        <label for="search-org" class="visually-hidden"></label>
+        <input type="text" id="search-org"
+               class="form-control border-light-subtle border-start-0"
+               placeholder="이름/직급/부서 검색">
+
+        <small id="btn-close" class="input-group-text bg-white" style="cursor: pointer;">
+            <i class="bi bi-x text-muted"></i>
+        </small>
+    </section>
+
+    <div class="bg-white rounded-3" style="height: 400px;">
+      <div class="h-100 overflow-auto custom-scrollbar p-2">
+        <nav class="nav flex-column org-tree-nav" id="send-org-tree-nav">
+          <div class="text-center py-5">
+            <div class="mb-3">
+              <i class="bi bi-people text-light" style="font-size: 3rem;"></i>
+            </div>
+            <p class="text-muted mb-0 small">조직도를 불러오는 중입니다.</p>
+          </div>
+        </nav>
+      </div>
+    </div>
+
+</main>
+
+
+<script src="js/treeMenu.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+
+        const response = await fetch('example.json');
+        if (!response.ok) throw new Error('데이터를 불러오는데 실패했습니다.');
+
+        const orgData = await response.json();
+
+        const tree = TreeMenu('#send-org-tree-nav', {
+            data:orgData,
+            columns: { // id, name, type, children, extraItems, subText로 사용할 컬럼 명을 지정
+                id: 'code',
+                name: 'name',
+                type: (item) => item.code ? 'folder' : 'file',
+                children: 'children',
+                extraItems: 'memberList',
+                subText: 'position_name'
+            },
+            icons: { // icon 지정
+                folderClose: 'bi-collection-fill text-primary',
+                folderOpen: 'bi-collection-fill text-primary',
+                file: 'bi-person-fill text-muted',
+                expand: 'bi-chevron-right',
+                collapse: 'bi-chevron-down',
+                loading: 'bi-hourglass-split',
+                checkBoxClass: 'custom-control-input me-2'
+            },
+            onCheckChange: (folders, files) => console.log(folders, files)
+        });
+
+
+        const searchInput = document.getElementById('search-org');
+
+        const handleSearch = debounce((event) => {
+            const keyword = event.target.value;
+            if (tree) {
+                tree.search(keyword);
+            }
+        }, 500);
+
+        searchInput.addEventListener('input', handleSearch);
+    });
+
+    /**
+     * 디바운스 함수: 연속된 호출 중 마지막 호출만 실행
+     * @param {Function} func - 실행할 함수
+     * @param {number} delay - 대기 시간 (ms)
+     */
+    function debounce(func, delay) {
+        let timer;
+        return function (...args) {
+            if (timer) clearTimeout(timer); // 이전 타이머가 있으면 제거
+            timer = setTimeout(() => {
+                func.apply(this, args);    // 지정된 시간 후 함수 실행
+            }, delay);
+        };
+    }
+</script>
+
+</body>
+</html>

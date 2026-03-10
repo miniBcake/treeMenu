@@ -1,0 +1,40 @@
+[
+  {
+    "code": "DEPT_001",
+    "name": "본사",
+    "children": [
+      {
+        "code": "DEPT_002",
+        "name": "기술운영본부",
+        "children": [
+          {
+            "code": "DEPT_004",
+            "name": "클라우드팀",
+            "memberList": [
+              { "id": "USER_001", "name": "김철수", "position_name": "팀장", "department_name": "클라우드팀" },
+              { "id": "USER_002", "name": "이영희", "position_name": "대리", "department_name": "클라우드팀" }
+            ]
+          },
+          {
+            "code": "DEPT_005",
+            "name": "보안솔루션팀",
+            "memberList": [
+              { "id": "USER_003", "name": "박보안", "position_name": "과장", "department_name": "보안솔루션팀" }
+            ]
+          }
+        ],
+        "memberList": [
+          { "id": "USER_004", "name": "최본부", "position_name": "본부장", "department_name": "기술운영본부" }
+        ]
+      },
+      {
+        "code": "DEPT_003",
+        "name": "경영지원실",
+        "memberList": [
+          { "id": "USER_005", "name": "정경영", "position_name": "실장", "department_name": "경영지원실" },
+          { "id": "USER_006", "name": "한지원", "position_name": "사원", "department_name": "경영지원실" }
+        ]
+      }
+    ]
+  }
+]

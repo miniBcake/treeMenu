@@ -8,16 +8,13 @@
  * @module TreeMenu
  * @requires Bootstrap 5 (CSS + JS)
  * @requires Bootstrap Icons
- * @version 1.3.0
+ * @version 1.4.0
  *
- * ### 패턴 변경 (v1.2 class → v1.3 팩토리 함수)
- * - `new TreeMenu(...)` 대신 `TreeMenu(selector, options)`로 인스턴스를 생성합니다.
- * - 내부 상태는 클로저 변수로 완전히 은닉되며, 공개 API만 반환 객체에 노출됩니다.
- * - `this` 바인딩 문제가 없고, 메서드를 변수에 구조 분해해도 안전하게 동작합니다.
+ * ### 경로 로드 기능 추가
+ * - 경로를 줄 경우 해당 경로를 open하고 focus하는 기능
  *
- * ### CSS 완전 내장
- * - 외부 CSS 파일 없이 단독 동작합니다.
- * - Bootstrap 4 `custom-control` 체크박스 스타일(indeterminate 포함)을 내장합니다.
+ * ### 클릭 반응 옵션 추가
+ * 클릭시 open folder되는 기능을 on/off하는 기능 추가
  *
  * @example
  * // 조직도 트리
@@ -138,6 +135,9 @@
  * @property {IconSet} [icons]
  *   아이콘 클래스 오버라이드.
  *   미지정 키는 기본값으로 채워집니다(shallow merge).
+ *
+ * @property {boolean} [addClickCSS=true]
+ *   폴더 클릭시 반응(css) 사용 여부
  *
  * @property {boolean} [showCheckbox=true]
  *   각 노드 앞에 체크박스 표시 여부.
@@ -370,11 +370,11 @@ const TreeMenu = (selector, options = {}) => {
     const defaultColumns = {
         id:         'id',
         name:       'name',
-        type:       (item) => (item.children && item.children.length > 0) ? 'folder' : 'file',
+        type:       'type',
         children:   'children',
-        extraItems: 'memberList',
-        subText:    'position_name',
-        icon:       'iconClass',
+        extraItems: 'extraItems',
+        subText:    'subText',
+        icon:       'icon',
     };
 
     /**
@@ -383,6 +383,7 @@ const TreeMenu = (selector, options = {}) => {
      */
     const opt = {
         data:          [],
+        addClickCSS: true,
         showCheckbox:  true,
         cascadeCheck:  true,
         lazyLoad:      false,
@@ -406,11 +407,8 @@ const TreeMenu = (selector, options = {}) => {
      *
      * 포함 항목:
      * - TreeMenu 레이아웃 스타일 (`tree-menu-*` 네임스페이스)
-     * - Bootstrap 4 `custom-control` 체크박스 전체 스타일
      * - indeterminate(−) 상태 스타일 (SVG data URI 사용)
      * - 로딩 스피너 애니메이션
-     *
-     * 이미 `id="tree-menu-style"` 태그가 있으면 주입을 건너뜁니다.
      *
      * @returns {void}
      */
@@ -762,16 +760,17 @@ const TreeMenu = (selector, options = {}) => {
         if (node.customIcon) {
             iconClass = node.customIcon;
         } else if (isFolder) {
-            iconClass = isFocused
+            const showFocusIcon = isFocused && opt.addClickCSS;
+            iconClass = showFocusIcon
                 ? 'bi-folder2-open text-primary'
                 : (node.isExpanded ? opt.icons.folderOpen : opt.icons.folderClose);
         } else {
-            iconClass = isFocused ? `${opt.icons.file} text-primary` : opt.icons.file;
+            iconClass = (isFocused && opt.addClickCSS) ? `${opt.icons.file} text-primary` : opt.icons.file;
         }
 
         // ── 텍스트 클래스 ──────────────────────────────────────────────────
         // 폴더: fw-bold text-dark | 파일: text-dark | 포커스: text-primary fw-bold
-        const nameClass = isFocused
+        const nameClass = (isFocused && opt.addClickCSS)
             ? 'text-nowrap text-primary fw-bold'
             : (isFolder ? 'text-nowrap fw-bold text-dark' : 'text-nowrap text-dark');
 
@@ -804,7 +803,7 @@ const TreeMenu = (selector, options = {}) => {
 
         return `
         <div class="file-item-container py-1 w-100" data-id="${node.id}">
-            <div class="tree-menu-nav-link${isFocused ? ' is-focused' : ''}">
+            <div class="tree-menu-nav-link${(isFocused && opt.addClickCSS) ? ' is-focused' : ''}">
                 <div class="me-1 toggle-btn d-flex justify-content-center align-items-center"
                      style="width:20px;flex-shrink:0;">
                     ${toggleHtml}
@@ -1214,11 +1213,13 @@ const TreeMenu = (selector, options = {}) => {
     };
 
     /**
-     * 선택된 파일 목록 데이터 배열 반환 (폴더 + 파일)
+     * 선택된 파일 + 폴더 목록 데이터 배열 반환 (폴더 + 파일)
      * @returns {Object[]} 통합된 데이터 배열
      */
     const getSelectedAll = () => {
-        return getSelectedFolders().concat(getSelectedFiles());
+        return Array.from(nodes.values())
+            .filter(n => n.isChecked)
+            .map(n => n.raw);
     }
 
     // =========================================================================
@@ -1257,6 +1258,35 @@ const TreeMenu = (selector, options = {}) => {
         if (container) delete container._treeMenuBound;
     };
 
+    /**
+     * 경로 문자열을 분석하여 해당 경로의 모든 부모를 펼치고 최종 노드에 포커스합니다.
+     * @param {string} pathStr - 예: "Depth1 > Depth2 > Target"
+     */
+    const openPath = async (pathStr) => {
+        if (!pathStr) return;
+        const pathParts = pathStr.split('>').map(s => s.trim());
+        let currentParentId = null;
+
+        for (let i = 0; i < pathParts.length; i++) {
+            const partName = pathParts[i];
+            const targetNode = Array.from(nodes.values()).find(n =>
+                n.name === partName && n.parentId === currentParentId
+            );
+            if (!targetNode) break;
+
+            if (targetNode.type === 'folder' && !targetNode.isExpanded) {
+                await toggleNode(targetNode); // 마지막 노드도 폴더면 펼치기
+            }
+
+            if (i === pathParts.length - 1) {
+                focusedNodeId = targetNode.id; // 마지막 노드에만 포커스
+            } else {
+                currentParentId = targetNode.id;
+            }
+        }
+        _render();
+    };
+
     // =========================================================================
     // 초기 실행
     // =========================================================================
@@ -1280,5 +1310,6 @@ const TreeMenu = (selector, options = {}) => {
 
         setCheck,   // 체크 상태 전파
         toggleNode, // 토글 관리
+        openPath,   // 해당 경로로 open
     };
 };

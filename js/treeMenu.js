@@ -174,11 +174,7 @@
  *
  * @property {string} [emptyMessage]
  *   데이터가 없을 때 표시할 안내 문자열.
- *   미지정 시 `sendModalMode`에 따라 기본 메시지를 사용합니다.
- *
- * @property {boolean} [sendModalMode=false]
- *   `true`이면 빈 목록 메시지를 "현재 폴더에 하위 폴더가 없습니다."로 표시합니다.
- *   `false`이면 "비어있습니다."를 사용합니다.
+ *   미지정 시 기본 메시지를 사용합니다.
  */
 
 /**
@@ -382,17 +378,16 @@ const TreeMenu = (selector, options = {}) => {
      * @type {TreeMenuOptions & { icons: IconSet, columns: ColumnMapping }}
      */
     const opt = {
-        data:          [],
-        addClickCSS: true,
-        showCheckbox:  true,
-        cascadeCheck:  true,
-        lazyLoad:      false,
-        lazyReload:    false,
-        sendModalMode: false,
-        emptyMessage:  null,
-        onLazyLoad:    async () => [],
-        onCheckChange: () => {},
-        onClick:       () => {},
+        data:           [],
+        addClickCSS:    true,
+        showCheckbox:   true,
+        cascadeCheck:   true,
+        lazyLoad:       false,
+        lazyReload:     false,
+        emptyMessage:   null,
+        onLazyLoad:     async () => [],
+        onCheckChange:  () => {},
+        onClick:        () => {},
         ...options,
         icons:   { ...defaultIcons,   ...(options.icons   || {}) },
         columns: { ...defaultColumns, ...(options.columns || {}) },
@@ -697,15 +692,12 @@ const TreeMenu = (selector, options = {}) => {
      * 빈 목록 안내 HTML을 반환합니다.
      *
      * - `opt.emptyMessage`가 있으면 그 값을 사용합니다.
-     * - 없으면 `opt.sendModalMode`에 따라 분기합니다.
-     *   - `true`: "현재 폴더에 하위 폴더가 없습니다."
-     *   - `false`: "비어있습니다."
+     * - 기본 메세지 : '비어있습니다.'
      *
      * @returns {string} 빈 목록 HTML 문자열
      */
     const _buildEmptyHtml = () => {
-        const msg = opt.emptyMessage
-            || (opt.sendModalMode ? '현재 폴더에 하위 폴더가 없습니다.' : '비어있습니다.');
+        const msg = opt.emptyMessage || '비어있습니다.';
         return `
         <div class="file-item-container w-100">
             <div class="tree-menu-nav-link">
@@ -741,7 +733,7 @@ const TreeMenu = (selector, options = {}) => {
 
         // lazyReload=true인 폴더는 isLoaded가 항상 false이므로 항상 토글 아이콘 표시
         const hasChildren = node.childrenIds.length > 0
-            || (isFolder && opt.lazyLoad && !node.isLoaded);
+            || (isFolder && opt.lazyLoad && !node.isLoaded && !node.isExpanded);
 
         // ── 토글 아이콘 ────────────────────────────────────────────────────
         let toggleHtml;
@@ -795,7 +787,7 @@ const TreeMenu = (selector, options = {}) => {
                     if (child) childrenHtml += _buildNodeHtml(child);
                 });
                 childrenHtml += `</nav>`;
-            } else if (!node.isLoading && node.isLoaded) {
+            } else if (!node.isLoading && (node.isLoaded || opt.lazyLoad)) {
                 // lazyLoad 후 빈 결과
                 childrenHtml = `<nav class="nav flex-column tree-menu-children">${_buildEmptyHtml()}</nav>`;
             }
@@ -1260,11 +1252,11 @@ const TreeMenu = (selector, options = {}) => {
 
     /**
      * 경로 문자열을 분석하여 해당 경로의 모든 부모를 펼치고 최종 노드에 포커스합니다.
-     * @param {string} pathStr - 예: "Depth1 > Depth2 > Target"
+     * @param {string} pathStr - 예: "Depth1/Depth2/Target"
      */
     const openPath = async (pathStr) => {
         if (!pathStr) return;
-        const pathParts = pathStr.split('>').map(s => s.trim());
+        const pathParts = pathStr.split('/').map(s => s.trim());
         let currentParentId = null;
 
         for (let i = 0; i < pathParts.length; i++) {

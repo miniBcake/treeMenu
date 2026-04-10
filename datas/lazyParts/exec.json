@@ -1,0 +1,7 @@
+[
+  { "id": 301, "name": "김대표", "position_name": "대표이사" },
+  { "id": 302, "name": "황이사", "position_name": "이사" },
+  { "id": 303, "name": "려이사", "position_name": "이사" },
+  { "id": 304, "name": "이이사", "position_name": "이사" },
+  { "id": 305, "name": "최이사", "position_name": "이사" }
+]

@@ -1,0 +1,5 @@
+[
+  { "code": "DEV-FE", "name": "프론트엔드팀" },
+  { "code": "DEV-BE", "name": "백엔드팀" },
+  { "id": 101, "name": "김개발", "position_name": "본부장" }
+]

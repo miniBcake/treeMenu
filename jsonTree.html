@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TreeMenu JSON load 예제</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body class="bg-light p-4">
+
+<main class="mx-auto" style="max-width: 500px;">
+    <div class="d-flex align-items-center mb-3">
+        <a href="index.html" class="btn btn-sm btn-outline-secondary border-0 me-2">
+            <i class="bi bi-chevron-left"></i> 이전
+        </a>
+    </div>
+
+    <h6 class="fw-bold mb-3">조직도 <small class="text-muted fw-normal">(External JSON)</small></h6>
+
+    <section class="input-group input-group-sm shadow-sm rounded-2 mb-3">
+        <span class="input-group-text bg-white border-end-0">
+            <i class="bi bi-search text-muted"></i>
+        </span>
+        <input type="text" id="search-org" class="form-control border-start-0" placeholder="이름/직급/부서 검색">
+        <label for="search-org"></label>
+        <button id="btn-close" class="input-group-text bg-white border-start-0" style="cursor: pointer;">
+            <i class="bi bi-x-lg text-muted"></i>
+        </button>
+    </section>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-2" style="height: 450px;">
+            <div class="h-100 overflow-auto custom-scrollbar">
+                <nav class="nav flex-column" id="send-org-tree-nav">
+                    <div class="text-center py-5 mt-4">
+                        <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+                        <p class="text-muted small">데이터를 로드하고 있습니다...</p>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <div class="d-flex gap-2 mb-2">
+            <button id="btn-get" class="btn btn-sm btn-primary">선택 확인</button>
+            <button id="btn-reset" class="btn btn-sm btn-outline-secondary">초기화</button>
+        </div>
+        <h6 class="small fw-bold border-bottom pb-2">선택된 정보</h6>
+        <div id="check-result" class="small text-muted mt-2" style="white-space: pre-wrap;">버튼을 눌러 선택값을 확인하세요.</div>
+    </div>
+</main>
+
+<script src="js/treeMenu.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const searchInput = document.getElementById('search-org');
+        const resultDisplay = document.getElementById('check-result');
+        let tree = null;
+
+        try {
+            // 1. 초기 데이터 로드 (otherNameExample.json)
+            const response = await fetch('datas/otherNameExample.json');
+            if (!response.ok) {
+                alert('데이터 파일을 찾을 수 없습니다.');
+                return;
+            }
+            const orgData = await response.json();
+
+            // 2. TreeMenu 인스턴스 생성
+            tree = TreeMenu('#send-org-tree-nav', {
+                data: orgData,
+                columns: {
+                    id: (item) => item.code || item.id, // 부서(code)와 사원(id) 유연한 매핑
+                    name: 'name',
+                    type: (item) => item.code ? 'folder' : 'file',
+                    children: 'children',
+                    extraItems: 'memberList',
+                    subText: 'position_name'
+                },
+                icons: {
+                    folderClose: 'bi-collection-fill text-primary',
+                    folderOpen:  'bi-collection-fill text-primary',
+                    file:        'bi-person-fill text-muted',
+                    expand:      'bi-chevron-right',
+                    collapse:    'bi-chevron-down',
+                    loading:     'bi-hourglass-split'
+                },
+                // 체크박스 활성화 및 이벤트
+                showCheckbox: true,
+                onCheckChange: (folders, files) => renderResult(folders, files)
+            });
+
+        } catch (error) {
+            console.error('Initialization Error:', error);
+            document.getElementById('send-org-tree-nav').innerHTML =
+                `<div class="alert alert-danger m-2 small">${error.message}</div>`;
+        }
+
+        // 3. 검색 기능 (디바운스 적용)
+        searchInput.addEventListener('input', debounce((e) => {
+            if (tree) tree.search(e.target.value);
+        }, 500));
+
+        // 4. 이벤트 바인딩 (검색, 초기화 등)
+        searchInput.addEventListener('input', debounce((e) => tree.search(e.target.value), 500));
+
+        document.getElementById('btn-close').addEventListener('click', () => {
+            searchInput.value = '';
+            tree.search('');
+        });
+
+        document.getElementById('btn-get').addEventListener('click', () => {
+            renderResult(tree.getSelectedFolders(), tree.getSelectedFiles());
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            location.reload(); // LazyLoad 환경에서는 페이지 리로드 혹은 setData가 가장 깔끔함
+        });
+
+        function renderResult(folders, files) {
+            const fText = folders.map(f => `[부서] ${f.name}`).join('\n');
+            const mText = files.map(m => `[사원] ${m.name} ${m.position_name}`).join('\n');
+            resultDisplay.textContent = (fText || mText) ? `${fText}\n${mText}` : '선택된 항목이 없습니다.';
+        }
+    });
+
+    function debounce(func, delay) {
+        let timer;
+        return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+</script>
+
+</body>
+</html>

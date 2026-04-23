@@ -8,13 +8,9 @@
  * @module TreeMenu
  * @requires Bootstrap 5 (CSS + JS)
  * @requires Bootstrap Icons
- * @version 1.4.0
+ * @version 1.5.0
  *
- * ### 경로 로드 기능 추가
- * - 경로를 줄 경우 해당 경로를 open하고 focus하는 기능
- *
- * ### 클릭 반응 옵션 추가
- * 클릭시 open folder되는 기능을 on/off하는 기능 추가
+ * ### 모두 펼치기, 모두 접기 기능 추가
  *
  * @example
  * // 조직도 트리
@@ -272,6 +268,15 @@
  *   폴더 노드를 펼치거나 접습니다. lazyLoad/lazyReload 로직을 포함합니다.
  *   @param {TreeNode} node
  *   @returns {Promise<void>}
+ *
+ * @property {function(number): void} expandAll
+ *   폴더 노드를 지정한 뎁스만큼 전부 오픈합니다. 지정하지 않을 경우, 또는 음수를 전달할 경우 전체 오픈됩니다.
+ *   @param {number} level
+ *   @returns {void}
+ *
+ * @property {function(): void} collapseAll
+ *   폴더 노드를 전부 닫습니다.
+ *   @returns {void}
  */
 
 // ============================================================================
@@ -304,6 +309,11 @@
  * const members = tree.getSelectedFiles();
  */
 const TreeMenu = (selector, options = {}) => {
+
+    // ── 전역 상수 및 설정 ───────────────────────────────────────────────────
+
+    /** 패스 구분자 */
+    const PATH_SEPARATOR = ' > ';
 
     // ── 클로저 상태 변수 ────────────────────────────────────────────────────
 
@@ -538,7 +548,7 @@ const TreeMenu = (selector, options = {}) => {
             const rawId      = typeof cols.id   === 'function' ? cols.id(item)   : item[cols.id];
             const type       = typeof cols.type === 'function' ? cols.type(item) : item[cols.type];
             const uniqueId   = `${type}:${rawId}`;
-            const currentPath = pathStack.join(' > ');
+            const currentPath = pathStack.join(PATH_SEPARATOR);
 
             const parentChecked   = !!(parentId && nodes.get(parentId)?.isChecked);
             const snapshotChecked = checkSnapshot?.has(rawId) ? checkSnapshot.get(rawId) : null;
@@ -601,7 +611,7 @@ const TreeMenu = (selector, options = {}) => {
      */
     const _parseExtraItems = (items, parentId, pathStack, checkSnapshot) => {
         const cols        = opt.columns;
-        const currentPath = pathStack.join(' > ');
+        const currentPath = pathStack.join(PATH_SEPARATOR);
 
         items.forEach(item => {
             const rawId    = typeof cols.id   === 'function' ? cols.id(item)   : item[cols.id];
@@ -904,7 +914,7 @@ const TreeMenu = (selector, options = {}) => {
             _render(); // 스피너 표시
 
             const children = await opt.onLazyLoad(node.raw);
-            const pathParts = node.fullPath ? node.fullPath.split(' > ') : [];
+            const pathParts = node.fullPath ? node.fullPath.split(PATH_SEPARATOR) : [];
             _parseData(children, node.id, [...pathParts, node.name], checkSnapshot);
 
             node.isLoading = false;
@@ -1235,7 +1245,6 @@ const TreeMenu = (selector, options = {}) => {
 
     /**
      * 컨테이너 HTML을 비우고 내부 노드 맵 및 상태를 초기화합니다.
-     *
      * 컨테이너가 DOM에서 제거되거나 다른 컴포넌트로 교체될 때 호출합니다.
      *
      * @returns {void}
@@ -1253,6 +1262,7 @@ const TreeMenu = (selector, options = {}) => {
     /**
      * 경로 문자열을 분석하여 해당 경로의 모든 부모를 펼치고 최종 노드에 포커스합니다.
      * @param {string} pathStr - 예: "Depth1/Depth2/Target"
+     * @return {void}
      */
     const openPath = async (pathStr) => {
         if (!pathStr) return;
@@ -1279,6 +1289,42 @@ const TreeMenu = (selector, options = {}) => {
         _render();
     };
 
+    /**
+     * 모든 폴더 노드를 펼치거나 지정된 깊이(level)까지만 펼칩니다.
+     * * - `level`을 생략하면 모든 폴더를 펼칩니다.
+     * - `level`이 0이면 최상위 노드만 보이고 모든 하위 폴더가 접힙니다.
+     * - `level`이 1이면 최상위 폴더는 펼쳐지고 그 자식까지만 보입니다.
+     *
+     * @param {number} [level] - 펼칠 깊이 제한 (생략 또는 -1 이하의 수 전달 시 전체 확장)
+     * @returns {void}
+     */
+    const expandAll = (level = -1) => {
+        nodes.forEach(node => {
+            if (node.type === 'folder') {
+                if (level < 0 ) { // 기본 값일 경우 전부 open
+                    node.isExpanded = true;
+                } else { // fullPath의 패스 구분자 개수로 현재 뎁스 계산 (최상위는 0)
+                    const currentDepth = node.fullPath ? node.fullPath.split(PATH_SEPARATOR).length : 0;
+                    node.isExpanded = currentDepth < level;
+                }
+            }
+        });
+        _render();
+    };
+
+    /**
+     * 모든 폴더 노드를 일괄적으로 접습니다.
+     * @returns {void}
+     */
+    const collapseAll = () => {
+        nodes.forEach(node => {
+            if (node.type === 'folder') {
+                node.isExpanded = false;
+            }
+        });
+        _render();
+    };
+
     // =========================================================================
     // 초기 실행
     // =========================================================================
@@ -1292,16 +1338,18 @@ const TreeMenu = (selector, options = {}) => {
 
     /** @type {TreeMenuInstance} */
     return {
-        search,  // 검색
-        setData, // 새 데이터 세팅
-        destroy, // 완전 초기화
+        search,             // 검색
+        setData,            // 새 데이터 세팅
+        destroy,            // 완전 초기화
 
         getSelectedFolders, // 선택된 폴더 리스트
         getSelectedFiles,   // 선택된 파일 리스트
         getSelectedAll,     // 선택된 전체 리스트
 
-        setCheck,   // 체크 상태 전파
-        toggleNode, // 토글 관리
-        openPath,   // 해당 경로로 open
+        setCheck,           // 체크 상태 전파
+        toggleNode,         // 토글 관리
+        openPath,           // 해당 경로로 open
+        expandAll,          // 모두 펼치기
+        collapseAll,        // 모두 닫기
     };
 };

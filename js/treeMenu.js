@@ -168,6 +168,9 @@
  *   노드 콘텐츠 영역 클릭 시 호출되는 콜백.
  *   @param {Object} raw - 클릭된 노드의 원본 데이터 객체
  *
+ * @property {boolean} [showEmptyMsg=true]
+ *  `true`: 자손이 없을때 정해진 메세지를 보여줍니다. emptyMessage
+ *
  * @property {string} [emptyMessage]
  *   데이터가 없을 때 표시할 안내 문자열.
  *   미지정 시 기본 메시지를 사용합니다.
@@ -394,6 +397,7 @@ const TreeMenu = (selector, options = {}) => {
         cascadeCheck:   true,
         lazyLoad:       false,
         lazyReload:     false,
+        showEmptyMsg:   true,
         emptyMessage:   null,
         onLazyLoad:     async () => [],
         onCheckChange:  () => {},
@@ -707,6 +711,8 @@ const TreeMenu = (selector, options = {}) => {
      * @returns {string} 빈 목록 HTML 문자열
      */
     const _buildEmptyHtml = () => {
+        if (!opt.showEmptyMsg) return `<div class="tree-menu-empty"></div>`;
+
         const msg = opt.emptyMessage || '비어있습니다.';
         return `
         <div class="file-item-container w-100">

@@ -7,7 +7,7 @@
  * @module TreeMenu
  * @requires Bootstrap 5 (CSS + JS)
  * @requires Bootstrap Icons
- * @version 1.5.3
+ * @version 1.5.4
  *
  * @example
  * // 조직도 트리
@@ -241,7 +241,7 @@ const TreeMenu = (selector, options = {}) => {
                 rawId,
                 name:            item[cols.name],
                 type,
-                subText:         item[cols.subText] || '',
+                subText:         typeof cols.subText === 'function' ? cols.subText(item) : (item[cols.subText] || ''),
                 fullPath:        currentPath,
                 parentId,
                 childrenIds:     [],
@@ -293,7 +293,7 @@ const TreeMenu = (selector, options = {}) => {
                 rawId,
                 name:            item[cols.name],
                 type,
-                subText:         item[cols.subText] || '',
+                subText:         typeof cols.subText === 'function' ? cols.subText(item) : (item[cols.subText] || ''),
                 fullPath:        currentPath,
                 parentId,
                 childrenIds:     [],

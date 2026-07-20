@@ -38,7 +38,7 @@
  * @property {string|function(Object):string} [type='type'] 노드 타입 ('folder' | 'file') 추출명 또는 함수
  * @property {string} [children='children'] 표준 자식 배열 필드명
  * @property {string} [extraItems='extraItems'] 추가 교차 매핑 자식 배열 필드명 (예: 부서 내 사원목록)
- * @property {string} [subText='subText'] 우측 보조 텍스트 필드명
+ * @property {function|string} [subText='subText'] 우측 보조 텍스트 필드명
  * @property {string} [icon='icon'] 노드별 개별 커스텀 아이콘 필드명
  */
 
